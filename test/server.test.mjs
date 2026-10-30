@@ -100,3 +100,18 @@ test('edits a JSON text, keeps the file format, and undoes it', async () => {
   assert.equal(JSON.parse(await readFile(path.join(root, 'en.json'), 'utf8')).hero.title, 'Hello world');
   assert.equal((await (await req('POST', 'edit', {body: {op: 'undo'}})).json()).undone, null);
 });
+
+test('adapters get the toolbar request (host, cookies) in the context', async () => {
+  const seen = [];
+  const content = {
+    name: 'spy',
+    async list(ctx) { seen.push(ctx.request.headers.get('host')); return []; },
+    async set(_input, ctx) { seen.push(ctx.request.headers.get('cookie')); return {}; },
+  };
+  const h = createDevbarHandler({enabled: true, content, root: await mkdtemp(path.join(tmpdir(), 'devbar-'))});
+  const headers = {host: '127.0.0.1:3000', 'x-devbar': '1', 'sec-fetch-site': 'same-origin', origin: ORIGIN};
+  await h.GET(new Request(`${ORIGIN}/devbar/edit?page=/`, {headers}));
+  await h.POST(new Request(`${ORIGIN}/devbar/edit`, {method: 'POST', headers: {...headers, 'content-type': 'application/json', cookie: 'view=published'},
+    body: JSON.stringify({op: 'set', id: 'x', value: 'y'})}));
+  assert.deepEqual(seen, ['127.0.0.1:3000', 'view=published']);
+});

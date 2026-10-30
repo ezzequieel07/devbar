@@ -111,6 +111,7 @@ html.db-editing, html.db-editing * { cursor: pointer !important; }
 .db-edit__status .db-btn { padding: 4px 9px; font-size: 12px; }
 .db-edit__link { appearance: none; border: 0; padding: 2px 4px; font: inherit; font-weight: 600; color: #0a64d6; background: none; border-radius: 4px; text-decoration: underline; text-underline-offset: 2px; }
 .db-edit__link:hover { background: rgba(10,132,255,.08); }
+.db-edit__muted { font-weight: 400; color: #666; }
 .db-edit__also { font-size: 11.5px; color: #666; }
 .db-edit__also .db-edit__link { font-size: 11.5px; font-weight: 500; }
 .db-edit__note { font-size: 12px; color: #8a5a00; }

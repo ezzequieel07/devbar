@@ -106,7 +106,7 @@ export function createDevbarHandler(options: DevbarServerOptions = {}): {GET: Ha
 
     if (route === 'edit') {
       if (!content) return notFound();
-      const ctx: EditContext = {page: url.searchParams.get('page') ?? '/', locale, t, log};
+      const ctx: EditContext = {page: url.searchParams.get('page') ?? '/', locale, t, log, request: req};
       try {
         if (req.method === 'GET') {
           const [leaves, status] = await Promise.all([content.list(ctx), content.drafts ? content.drafts.status(ctx) : []]);

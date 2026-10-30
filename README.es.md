@@ -145,6 +145,9 @@ export const {GET, POST, PATCH, DELETE} = createDevbarHandler({
   `*itálica*`, `[link](https://…)`.
 - **Tu sitio tiene que mostrar los borradores en desarrollo** (por ejemplo `perspective: 'drafts'` cuando
   `NODE_ENV === 'development'`); si no, no vas a ver lo que editás antes de publicarlo.
+- ¿Querés ver lo que está en la web sin tus borradores? Leé una cookie al pedir los datos (ej. `devbar_view=published`
+  → `perspective: 'published'`) y pasale el nombre a la barrita: `<Devbar viewCookie="devbar_view" />` suma
+  **Ver publicado** / **Ver borradores**.
 
 ### Tu propia fuente
 
@@ -160,11 +163,13 @@ alcanza:
   `_key` del bloque de Portable Text).
 - **`scope`** (opción del adaptador): prefijo de la clave → selector CSS de dónde se muestra.
 - **`data-devbar-code`** en un elemento (o `<Devbar codeZones=".grafico" />`) marca partes cuyo texto vive en el código.
+- **`data-devbar-bound`** en un elemento (o `<Devbar boundZones=".nota" />`) marca partes que se editan solo por
+  `data-devbar` (ej. un cuerpo de Portable Text con la `_key` en cada bloque): adentro no se adivina por el texto.
 
 ## Opciones de la barrita
 
 ```tsx
-<Devbar endpoint="/devbar" locale="es" agent="Claude" position="left" codeZones=".grafico" />
+<Devbar endpoint="/devbar" locale="es" agent="Claude" position="left" codeZones=".grafico" boundZones=".nota" viewCookie="devbar_view" />
 ```
 
 ## Seguridad

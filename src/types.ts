@@ -127,6 +127,8 @@ export type EditContext = {
   /** Picks the message in the user's language. */
   t: (en: string, es: string) => string;
   log: EditLog;
+  /** The toolbar's request, e.g. to offer different texts by host or cookie (read only: the body is already consumed). */
+  request: Request;
 };
 
 /** Thrown by adapters with a message meant for the person using the toolbar. */

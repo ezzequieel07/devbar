@@ -8,10 +8,14 @@ import type {Leaf} from '../types';
 //    - part of it (a heading split in two lines, a name animated letter by letter),
 //    - or a group of fields of the same object that together make what is shown (e.g. "2019 — 2021": from and to).
 // If the same text is saved in more than one place, every option is returned and the edit box asks which one.
+// Inside a bound zone (`[data-devbar-bound]` or the `boundZones` selector, e.g. a rich-text body rendered from a CMS)
+// nothing is guessed by text: only `data-devbar` elements are editable there, so a word that happens to match a text
+// saved elsewhere never opens the wrong field.
 
 /** Each option is one leaf or a group of leaves edited together, with its score (best first). */
 export type Option = {leaves: Leaf[]; s: number};
-export type Match = {kind: 'options'; el: Element; options: Option[]} | {kind: 'none'; el: Element; code: boolean};
+/** `code`: inside a code zone. `bound`: inside a bound zone, where texts are only found through `data-devbar`. */
+export type Match = {kind: 'options'; el: Element; options: Option[]} | {kind: 'none'; el: Element; code: boolean; bound?: boolean};
 
 const clean = (s: string) =>
   s.normalize('NFC')
@@ -102,14 +106,16 @@ const SPREAD = 15;
 
 /**
  * Finds the editable text of the clicked element (or its parents). `codeZones`: selector of parts whose text lives in
- * the code (charts, demos); `[data-devbar-code]` always counts.
+ * the code (charts, demos); `[data-devbar-code]` always counts. `boundZones`: selector of parts edited only through
+ * `data-devbar`; `[data-devbar-bound]` always counts.
  */
-export function match(start: Element, prepared: Prepared[], byBind: Map<string, Leaf[]>, isOurs: (el: Element) => boolean, codeZones = ''): Match {
+export function match(start: Element, prepared: Prepared[], byBind: Map<string, Leaf[]>, isOurs: (el: Element) => boolean, codeZones = '', boundZones = ''): Match {
   const bound = bindMatch(start, byBind);
   if (bound) return bound;
   const zones = ['[data-devbar-code]', codeZones].filter(Boolean).join(', ');
   const zone = start.closest(zones);
   if (zone) return {kind: 'none', el: zone, code: true};
+  if (start.closest(['[data-devbar-bound]', boundZones].filter(Boolean).join(', '))) return {kind: 'none', el: start, code: false, bound: true};
   const levels: {s: number; el: Element; options: Option[]}[] = [];
   // Text of the clicked element itself: a parent only counts with a text that contains it (otherwise clicking a text that
   // lives in the code would climb to its section and pick any other text that happens to be inside).

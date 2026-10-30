@@ -178,6 +178,9 @@ export const {GET, POST, PATCH, DELETE} = createDevbarHandler({
   `[link](https://…)`. Unchanged spans and links keep their keys. Blocks with other marks are shown read-only.
 - **Your site has to show drafts in development** (e.g. `perspective: 'drafts'` when `NODE_ENV === 'development'`),
   or you won't see your edits before publishing.
+- Want to check what's live without your drafts? Read a cookie in your data fetching (e.g. `devbar_view=published` →
+  `perspective: 'published'`) and pass its name to the toolbar: `<Devbar viewCookie="devbar_view" />` adds
+  **View published** / **View drafts** to the edit status.
 
 ### Your own source
 
@@ -190,6 +193,7 @@ export const myAdapter: ContentAdapter = {
   name: 'my-cms',
   async list(ctx) {
     // Every editable text: [{id, label, docTitle, value, multiline?, max?, scope?, bind?, …}]
+    // ctx.page is the page the toolbar is on; ctx.request is its request (host, cookies) if the texts depend on it.
     return [];
   },
   async set({id, value, expected}, ctx) {
@@ -214,6 +218,9 @@ places (it asks). When that's not enough:
 - **`scope`** (adapter option): key prefix → CSS selector of where it shows, to tell apart the same text in two places.
 - **`data-devbar-code`** on an element (or `<Devbar codeZones=".chart, .demo" />`) marks parts whose text lives in the
   code, such as charts or demos: clicking them offers "Request the change".
+- **`data-devbar-bound`** on an element (or `<Devbar boundZones=".post-body" />`) marks parts edited only through
+  `data-devbar`, such as a rich-text body where every block carries its key: inside them nothing is guessed by text, so
+  a sentence that happens to match a text saved elsewhere never opens the wrong field.
 
 ## Toolbar options
 
@@ -224,6 +231,8 @@ places (it asks). When that's not enough:
   agent="Claude"       // name in "Notify …"
   position="left"      // bottom-left instead of bottom-right
   codeZones=".chart"   // parts whose texts live in the code
+  boundZones=".post"   // parts edited only through data-devbar
+  viewCookie="devbar_view" // "View published" / "View drafts" (drafts adapters)
   messages={{notify: 'Ping {agent}'}} // override any text
 />
 ```

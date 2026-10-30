@@ -23,6 +23,16 @@ export type DevbarProps = {
   agent?: string;
   /** Selector of page parts whose texts live in the code (charts, demos), besides `[data-devbar-code]`. */
   codeZones?: string;
+  /**
+   * Selector of page parts whose texts are found only through `data-devbar` (e.g. a rich-text body rendered from a CMS),
+   * besides `[data-devbar-bound]`: inside them nothing is matched by text.
+   */
+  boundZones?: string;
+  /**
+   * With a drafts adapter: name of a cookie your site reads to show the published content instead of drafts. The edit
+   * status gets "View published" / "View drafts", which set `<name>=published` or clear it and reload.
+   */
+  viewCookie?: string;
   /** Corner of the screen. Default: "right". */
   position?: 'right' | 'left';
 };
@@ -36,7 +46,7 @@ const MAX_IMAGES = 6;
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 const HIDDEN_KEY = 'devbar-hidden';
 
-export default function Devbar({endpoint = '/devbar', locale = 'en', messages, agent = 'Claude', codeZones, position = 'right'}: DevbarProps) {
+export default function Devbar({endpoint = '/devbar', locale = 'en', messages, agent = 'Claude', codeZones, boundZones, viewCookie, position = 'right'}: DevbarProps) {
   const base = endpoint.replace(/\/+$/, '');
   const t = useMemo(() => translator({...MESSAGES[locale], ...messages}, agent), [locale, messages, agent]);
   const headers = useMemo(() => ({'x-devbar': '1', 'x-devbar-locale': locale}), [locale]);
@@ -376,7 +386,7 @@ export default function Devbar({endpoint = '/devbar', locale = 'en', messages, a
         </div>
       )}
 
-      {caps.enabled && <EditMode base={base} headers={headers} caps={caps} t={t} codeZones={codeZones} active={editing} onActive={setEditing} onAsk={ask} />}
+      {caps.enabled && <EditMode base={base} headers={headers} caps={caps} t={t} codeZones={codeZones} boundZones={boundZones} viewCookie={viewCookie} active={editing} onActive={setEditing} onAsk={ask} />}
 
       <div className="db-bar">
         {picking ? (

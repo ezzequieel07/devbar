@@ -7,7 +7,8 @@ import {bindIndex, displayOf, isClear, match, norm, prepare, type Match, type Op
 // Edit mode: click a text on the page, change it in a box, save it through the content adapter. Blue = editable here;
 // gray = lives in the code ("Request the change" creates a request for the agent). "Other texts" lists what doesn't show
 // on the page (SEO, emails, error messages). With a CMS adapter, saving writes a draft: "Publish…" reviews and publishes.
-// Shortcut: Alt+E. Esc exits.
+// With `viewCookie`, "View published" sets that cookie (`<name>=published`) so the site shows what is live; editing
+// waits until "View drafts" clears it. Shortcut: Alt+E. Esc exits.
 
 type Editing = {options: Option[]; rect: Rect | null; el: Element | null};
 type Saved = {message: string; warnings: string[]; expect: string[]; scrollY: number; editing: boolean};
@@ -17,6 +18,8 @@ type Props = {
   caps: EditCapabilities;
   t: Translate;
   codeZones?: string;
+  boundZones?: string;
+  viewCookie?: string;
   active: boolean;
   onActive: (on: boolean) => void;
   onAsk: (el: Element) => void;
@@ -36,9 +39,14 @@ let savedHandled = false;
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** How a saved text reads on the page: without [links](url), asterisks or \escapes. */
+/** Emojis (and their joiners): some sites drop them when rendering, so the check after saving ignores them. */
+const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu;
+
+/** How a saved text reads on the page: without [links](url), asterisks, \escapes or emojis. */
 const shown = (v: string) =>
-  v.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\\([\\*[\]])|\*+/g, (_, c?: string) => c ?? '').trim().split('\n')[0].slice(0, 40);
+  v.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\\([\\*[\]])|\*+/g, (_, c?: string) => c ?? '').replace(EMOJI, '').trim().split('\n')[0].slice(0, 40);
+
+const readCookie = (name: string) => document.cookie.split('; ').find(c => c.startsWith(`${name}=`))?.slice(name.length + 1) ?? '';
 
 /** Current pathname, also on client-side navigation (any router). */
 function usePathname() {
@@ -60,17 +68,18 @@ function optionLabel(o: Leaf[]) {
   return `${head ? `${head} › ` : ''}${o.map(l => l.label.split(' › ').pop()).join(' + ')}`;
 }
 
-export default function EditMode({base, headers, caps, t, codeZones, active, onActive, onAsk}: Props) {
+export default function EditMode({base, headers, caps, t, codeZones, boundZones, viewCookie, active, onActive, onAsk}: Props) {
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [status, setStatus] = useState<DraftStatus[]>([]);
   const [loadError, setLoadError] = useState('');
   const [hover, setHover] = useState<{rect: Rect; label: string; ok: boolean} | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const [outside, setOutside] = useState<{el: Element; rect: Rect; code: boolean} | null>(null);
+  const [outside, setOutside] = useState<{el: Element; rect: Rect; code: boolean; bound: boolean} | null>(null);
   const [others, setOthers] = useState(false);
   const [review, setReview] = useState(false);
   const [toast, setToast] = useState<{text: string; tone: 'ok' | 'warn'} | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [published, setPublished] = useState(false);
   const pointer = useRef<{x: number; y: number} | null>(null);
   const dirty = useRef(false);
   const pathname = usePathname();
@@ -110,6 +119,14 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
   // The texts, again on every page (each page may have its own).
   useEffect(() => { load(); }, [load, pathname]);
 
+  const viewing = !!viewCookie && caps.drafts;
+  useEffect(() => { if (viewing) setPublished(readCookie(viewCookie!) === 'published'); }, [viewing, viewCookie]);
+  const toggleView = () => {
+    if (!viewCookie) return;
+    document.cookie = published ? `${viewCookie}=; path=/; max-age=0; samesite=lax` : `${viewCookie}=published; path=/; samesite=lax`;
+    window.location.reload();
+  };
+
   // On load: what was left by a save (message, scroll position, keep editing).
   useEffect(() => {
     if (savedHandled) return;
@@ -127,7 +144,7 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
       savedHandled = true;
       try { sessionStorage.removeItem(SAVED_KEY); } catch {}
       // textContent also counts what an animation has not revealed yet. {templates} match any name.
-      const page = norm(document.body.textContent ?? '');
+      const page = norm((document.body.textContent ?? '').replace(EMOJI, ''));
       const missing = s.expect.filter(e => e && !new RegExp(norm(e).split(/\{\w+\}/).map(escapeRe).join('.{1,60}?')).test(page));
       const warnings = [...s.warnings, ...(missing.length ? [t('notVisible')] : [])];
       setToast({text: [s.message, ...warnings].join(' '), tone: warnings.length ? 'warn' : 'ok'});
@@ -168,8 +185,8 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
 
   const inspect = useCallback((x: number, y: number): Match | null => {
     const el = elementAt(x, y);
-    return el ? match(el, prepared, byBind, isOurs, codeZones) : null;
-  }, [prepared, byBind, codeZones]);
+    return el ? match(el, prepared, byBind, isOurs, codeZones, boundZones) : null;
+  }, [prepared, byBind, codeZones, boundZones]);
 
   const updateHover = useCallback(() => {
     const p = pointer.current;
@@ -177,7 +194,7 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
     if (!loaded) { setHover(null); return; }
     const m = inspect(p.x, p.y);
     if (!m) { setHover(null); return; }
-    const label = m.kind === 'none' ? (m.code ? t('inCodeZone') : t('inCode'))
+    const label = m.kind === 'none' ? (m.code ? t('inCodeZone') : m.bound ? t('inBound') : t('inCode'))
       : isClear(m.options) ? optionLabel(m.options[0].leaves) : m.options.length === 1 ? `${optionLabel(m.options[0].leaves)}?` : t('places', {n: m.options.length});
     setHover({rect: toRect(m.el.getBoundingClientRect()), label, ok: m.kind !== 'none'});
   }, [active, editing, outside, others, review, loaded, inspect, t]);
@@ -197,11 +214,12 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
 
   const onClick = (e: React.PointerEvent) => {
     e.preventDefault();
+    if (published) { setToast({text: t('publishedNoEdit'), tone: 'warn'}); return; }
     if (!loaded) { setToast({text: loadError || t('loading'), tone: 'warn'}); return; }
     const m = inspect(e.clientX, e.clientY);
     if (!m) return;
     setHover(null);
-    if (m.kind === 'none') { setOutside({el: m.el, rect: toRect(m.el.getBoundingClientRect()), code: m.code}); return; }
+    if (m.kind === 'none') { setOutside({el: m.el, rect: toRect(m.el.getBoundingClientRect()), code: m.code, bound: !!m.bound}); return; }
     setEditing({options: m.options, rect: toRect(m.el.getBoundingClientRect()), el: m.el});
   };
 
@@ -219,7 +237,7 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
     }
   };
 
-  const showStatus = !!loadError || (caps.drafts ? active || changes > 0 : active);
+  const showStatus = !!loadError || published || (caps.drafts ? active || changes > 0 : active);
 
   return (
     <div {...{[UI_ATTR]: ''}}>
@@ -245,8 +263,8 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
 
       {outside && (
         <Popover rect={outside.rect} width={300}>
-          <p className="db-edit__title">{outside.code ? t('zoneTitle') : t('codeTitle')}</p>
-          <p className="db-edit__help">{outside.code ? t('zoneHelp') : t('codeHelp')}</p>
+          <p className="db-edit__title">{outside.code ? t('zoneTitle') : outside.bound ? t('boundTitle') : t('codeTitle')}</p>
+          <p className="db-edit__help">{outside.code ? t('zoneHelp') : outside.bound ? t('boundHelp') : t('codeHelp')}</p>
           <div className="db-edit__row">
             <button type="button" className="db-btn db-btn--ghost" onClick={close}>{t('close')}</button>
             <button type="button" className="db-btn" onClick={() => { const el = outside.el; close(); onActive(false); onAsk(el); }}>{t('requestChange')}</button>
@@ -287,7 +305,12 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
 
       {showStatus && (
         <div className="db-edit__status">
-          {loadError ? <span className="db-edit__err">{loadError}</span> : (
+          {loadError ? <span className="db-edit__err">{loadError}</span> : published ? (
+            <>
+              <span>{t('viewingPublished')}</span>
+              <button type="button" className="db-btn db-btn--ghost" onClick={toggleView}>{t('viewDrafts')}</button>
+            </>
+          ) : (
             <>
               {caps.drafts && (changes > 0
                 ? <button type="button" className="db-edit__link" onClick={() => { close(); setReview(true); }}>{changes === 1 ? t('changesOne') : t('changesMany', {n: changes})}</button>
@@ -295,6 +318,7 @@ export default function EditMode({base, headers, caps, t, codeZones, active, onA
               {caps.drafts && changes > 0 && <button type="button" className="db-btn" onClick={() => { close(); setReview(true); }}>{t('publishEllipsis')}</button>}
               {caps.undo && (!caps.drafts || changes > 0) && <button type="button" className="db-btn db-btn--ghost" onClick={() => runOp('undo')} title={t('undoTitle')}>{t('undo')}</button>}
               {active && <button type="button" className="db-btn db-btn--ghost" onClick={() => { close(); setOthers(true); }}>{t('otherTexts')}</button>}
+              {viewing && <button type="button" className="db-edit__link db-edit__muted" onClick={toggleView} title={t('viewPublishedTitle')}>{t('viewPublished')}</button>}
             </>
           )}
         </div>
