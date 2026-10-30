@@ -5,6 +5,9 @@
   "keywords": ["feedback", "toolbar", "dev-tools", "react", "nextjs", "sanity", "claude", "claude-code", "ai-agent", "inline-editing"],
   "license": "MIT",
   "author": "Ezequiel Bardal",
+  "repository": {"type": "git", "url": "git+https://github.com/ezzequieel07/devbar.git"},
+  "homepage": "https://github.com/ezzequieel07/devbar#readme",
+  "bugs": "https://github.com/ezzequieel07/devbar/issues",
   "type": "module",
   "sideEffects": false,
   "files": ["dist", "bin", "AGENT.md", "README.md", "README.es.md", "LICENSE"],
@@ -17,6 +20,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "prepare": "npm run build",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test test/*.test.mjs"
