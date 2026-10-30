@@ -1,0 +1,28 @@
+{
+  "hero": {
+    "eyebrow": "Studio Norte",
+    "title": "We design calm software",
+    "intro": "Small team, long projects. We help product teams find what to build next and ship it without the noise."
+  },
+  "services": {
+    "title": "What we do",
+    "items": [
+      {
+        "name": "Research",
+        "text": "Interviews, field visits and usability tests that end in decisions, not decks."
+      },
+      {
+        "name": "Design",
+        "text": "Flows, interfaces and design systems your developers will actually enjoy."
+      },
+      {
+        "name": "Build",
+        "text": "Front-end that ships: accessible, fast, and easy to change."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Let's talk",
+    "text": "Write to hello@norte.studio and we'll answer within a day."
+  }
+}

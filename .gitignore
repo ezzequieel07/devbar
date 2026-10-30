@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.devbar/
+.next/
+*.tsbuildinfo
+.DS_Store
