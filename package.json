@@ -2,21 +2,56 @@
   "name": "devbar",
   "version": "0.1.0",
   "description": "A dev-only toolbar for your site: mark an element, an area or some text, write what should change, and your coding agent picks it up. Edit texts in place (JSON files, Sanity).",
-  "keywords": ["feedback", "toolbar", "dev-tools", "react", "nextjs", "sanity", "claude", "claude-code", "ai-agent", "inline-editing"],
+  "keywords": [
+    "feedback",
+    "toolbar",
+    "dev-tools",
+    "react",
+    "nextjs",
+    "sanity",
+    "claude",
+    "claude-code",
+    "ai-agent",
+    "inline-editing"
+  ],
   "license": "MIT",
   "author": "Ezequiel Bardal",
-  "repository": {"type": "git", "url": "git+https://github.com/ezzequieel07/devbar.git"},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ezzequieel07/devbar.git"
+  },
   "homepage": "https://github.com/ezzequieel07/devbar#readme",
   "bugs": "https://github.com/ezzequieel07/devbar/issues",
   "type": "module",
   "sideEffects": false,
-  "files": ["dist", "bin", "AGENT.md", "README.md", "README.es.md", "LICENSE"],
-  "bin": {"devbar": "./bin/devbar.mjs"},
+  "files": [
+    "dist",
+    "bin",
+    "AGENT.md",
+    "README.md",
+    "README.es.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "devbar": "./bin/devbar.mjs"
+  },
   "exports": {
-    ".": {"types": "./dist/index.d.ts", "default": "./dist/index.js"},
-    "./server": {"types": "./dist/server.d.ts", "default": "./dist/server.js"},
-    "./adapters/json": {"types": "./dist/adapters/json.d.ts", "default": "./dist/adapters/json.js"},
-    "./adapters/sanity": {"types": "./dist/adapters/sanity.d.ts", "default": "./dist/adapters/sanity.js"}
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./adapters/json": {
+      "types": "./dist/adapters/json.d.ts",
+      "default": "./dist/adapters/json.js"
+    },
+    "./adapters/sanity": {
+      "types": "./dist/adapters/sanity.d.ts",
+      "default": "./dist/adapters/sanity.js"
+    }
   },
   "scripts": {
     "build": "tsup",
@@ -25,21 +60,26 @@
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test test/*.test.mjs"
   },
-  "engines": {"node": ">=18.17"},
+  "engines": {
+    "node": ">=18.17"
+  },
   "peerDependencies": {
     "@sanity/client": ">=6",
     "react": ">=18",
     "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
-    "@sanity/client": {"optional": true}
+    "@sanity/client": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@sanity/client": "^7.0.0",
-    "esbuild": "^0.27.7",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.27.7",
+    "jsdom": "^29.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tsup": "^8.5.0",

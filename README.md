@@ -19,12 +19,13 @@ While your dev server runs, devbar adds a small toolbar to the corner of your si
 No screenshots to annotate, no "the second button on the left, the blue one". No API keys either: it works with the
 coding agent you already use (Claude Code, Codex, Cursor, Aider…) through plain files.
 
-devbar only runs with your dev server. In a production build the toolbar is not rendered (and not even downloaded) and
+devbar only runs with your dev server. Outside development the toolbar renders nothing, its code isn't downloaded, and
 the endpoints answer 404.
 
 ## Contents
 
 - [Setup (Next.js)](#setup-nextjs)
+- [Installing devbar (for coding agents)](#installing-devbar-for-coding-agents)
 - [Working with your agent](#working-with-your-agent)
 - [Edit mode](#edit-mode): [JSON files](#json-files), [Sanity](#sanity), [your own source](#your-own-source)
 - [Telling devbar where texts are](#telling-devbar-where-texts-are)
@@ -36,7 +37,10 @@ the endpoints answer 404.
 ## Setup (Next.js)
 
 ```bash
-npm install devbar
+npm install github:ezzequieel07/devbar
+```
+
+```bash
 npx devbar init
 ```
 
@@ -67,6 +71,29 @@ Run `next dev`, open the site and you'll see the toolbar on the bottom right.
 | `Alt+H` | Hide / show the toolbar (e.g. to record your site) |
 | `Esc` | Cancel |
 | `⌘ Enter` | Send |
+
+## Installing devbar (for coding agents)
+
+If you are a coding agent and were asked to install devbar, follow these steps.
+
+**Check first.** It needs React and a server that runs Node. On another stack, tell the user instead of improvising.
+
+1. Install it: `npm install github:ezzequieel07/devbar` (with the project's package manager). Use a normal dependency, not
+   a dev one: the layout imports it, so production builds need it too.
+2. Run `npx devbar init`. It adds `.devbar/` to `.gitignore` and the working instructions to `CLAUDE.md` / `AGENTS.md`.
+3. Add the endpoints and the toolbar as in [Setup](#setup-nextjs). Use `locale="es"` if the user works in Spanish, and
+   `agent="…"` with your own name.
+4. Add [edit mode](#edit-mode) only if the user's texts live in JSON files or Sanity, or if they ask for it. Never put a
+   write token in client code.
+5. Check it: with the dev server running, `/devbar/feedback` must answer JSON and the toolbar must show on the bottom
+   right. Then tell the user to mark something, and to say "check the devbar requests" or run `npx devbar listen`.
+
+**Rules for production:**
+
+- Keep `process.env.NODE_ENV === 'development' &&` around `<Devbar />`.
+- Never pass `enabled` to `<Devbar />` or `createDevbarHandler()` and never widen `allowedHosts` unless the user explicitly
+  asks and understands that it exposes writing to their files or CMS.
+- Never commit `.devbar/`: requests can hold screenshots and page content.
 
 ## Working with your agent
 
@@ -248,6 +275,8 @@ run. With Vite, Remix, Astro or Hono, mount the handler under `/devbar/*` and re
 devbar can write files and CMS drafts, so the endpoints are locked down:
 
 - They answer **only in development** (`NODE_ENV === 'development'`, override with `enabled`). Otherwise: 404.
+- The toolbar renders **only in development** too, and its code is not downloaded elsewhere, even if the condition in
+  your layout is missing.
 - **Only local hosts** (127.0.0.1, localhost, [::1], *.localhost), which blocks DNS rebinding. Change with `allowedHosts`.
 - Every write needs the toolbar's own header plus a **same-origin** request, so other websites open in your browser
   can't create requests or edit texts.

@@ -20,13 +20,16 @@ Mientras corre tu servidor de desarrollo, devbar suma una barrita en la esquina 
 Sin capturas para anotar, sin «el segundo botón de la izquierda, el azul». Y sin claves de API: funciona con el agente
 que ya usás (Claude Code, Codex, Cursor, Aider…) a través de archivos comunes.
 
-devbar solo corre con el servidor de desarrollo. En el build de producción la barrita no se muestra (ni siquiera se
-descarga) y las rutas responden 404.
+devbar solo corre con el servidor de desarrollo. Fuera de desarrollo la barrita no muestra nada, su código no se descarga
+y las rutas responden 404.
 
 ## Instalación (Next.js)
 
 ```bash
-npm install devbar
+npm install github:ezzequieel07/devbar
+```
+
+```bash
 npx devbar init
 ```
 
@@ -57,6 +60,30 @@ Corré `next dev`, abrí el sitio y vas a ver la barrita abajo a la derecha.
 | `Alt+H` | Esconder / mostrar la barrita (por ejemplo, para grabar el sitio) |
 | `Esc` | Cancelar |
 | `⌘ Enter` | Enviar |
+
+## Instalar devbar (para agentes de código)
+
+Si sos un agente de código y te pidieron instalar devbar, seguí estos pasos.
+
+**Primero revisá.** Necesita React y un servidor con Node. Con otra tecnología, avisale a la persona en vez de improvisar.
+
+1. Instalalo: `npm install github:ezzequieel07/devbar` (con el gestor de paquetes del proyecto). Como dependencia normal,
+   no de desarrollo: el layout lo importa, así que el build de producción también lo necesita.
+2. Corré `npx devbar init`. Suma `.devbar/` al `.gitignore` y las instrucciones de trabajo a `CLAUDE.md` / `AGENTS.md`.
+3. Agregá las rutas y la barrita como en [Instalación](#instalación-nextjs). Usá `locale="es"` si la persona trabaja en
+   español, y `agent="…"` con tu nombre.
+4. Sumá el [modo Editar](#modo-editar) solo si sus textos están en archivos JSON o en Sanity, o si te lo piden. Nunca
+   pongas un token de escritura en código del navegador.
+5. Comprobalo: con el servidor de desarrollo corriendo, `/devbar/feedback` tiene que responder JSON y la barrita tiene que
+   verse abajo a la derecha. Después decile que marque algo, y que escriba «revisá los pedidos de devbar» o corra
+   `npx devbar listen`.
+
+**Reglas para producción:**
+
+- Dejá `process.env.NODE_ENV === 'development' &&` alrededor de `<Devbar />`.
+- Nunca pases `enabled` a `<Devbar />` ni a `createDevbarHandler()` ni amplíes `allowedHosts`, salvo que la persona lo pida
+  expresamente y entienda que expone la escritura en sus archivos o su CMS.
+- Nunca subas `.devbar/` a git: los pedidos pueden tener capturas y contenido de las páginas.
 
 ## Con tu agente
 
@@ -175,6 +202,8 @@ alcanza:
 ## Seguridad
 
 - Las rutas responden **solo en desarrollo**; si no, 404.
+- La barrita también se muestra **solo en desarrollo**, y fuera de ahí su código no se descarga, aunque falte la condición
+  en el layout.
 - **Solo hosts locales** (127.0.0.1, localhost, [::1], *.localhost).
 - Cada escritura necesita el encabezado de la barrita y el **mismo origen**: otras webs abiertas en tu navegador no
   pueden crear pedidos ni cambiar textos.

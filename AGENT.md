@@ -25,6 +25,10 @@ in `.devbar/pending/`.
 "<agent> is listening" light on and exits as soon as the user presses "Notify", printing the open requests. Do them, then
 start it again. It gives up after 8 hours (`--hours` to change it).
 
+**Production:** devbar is for development only. Keep `process.env.NODE_ENV === 'development' &&` around `<Devbar />`, don't
+pass `enabled` to it or to `createDevbarHandler()`, don't widen `allowedHosts`, and never commit `.devbar/`, unless the
+user explicitly asks.
+
 **Edit mode:** texts the user edits from the toolbar are saved straight to the content source (a JSON file, or a draft in
 the CMS) and logged in `.devbar/edits/`. Requests that come from edit mode ("Request the change") are texts that live in
 the code: find them by `target.text` and change them there.
